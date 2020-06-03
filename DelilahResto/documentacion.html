@@ -114,7 +114,37 @@
     Acceso denegado. Sólo administradores
         <a href="#"></a>
   </div> 
-  
+
+  <hr/>
+
+  <div class="method"><a name="pedidosIdDelete"></a>
+    <div class="method-path">
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /pedidos/{id}</code></pre></div>
+    <div class="method-summary">Elimina un pedido (<span class="nickname">pedidoIdDelete</span>)</div>
+    <div class="method-notes">Dado el id de un pedido, lo elimina de la base de datos.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">id (required)</div>
+
+            <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; ID del pedido a eliminar </div></div>  
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+    </div>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Se ha eliminado el pedido
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    Primero debes iniciar sesión
+        <a href="#"></a>
+    <h4 class="field-label">403</h4>
+    Acceso denegado. Sólo administradores
+        <a href="#"></a>
+  </div>
+
   <hr/>
 
   <div class="method"><a name="productosGet"></a>

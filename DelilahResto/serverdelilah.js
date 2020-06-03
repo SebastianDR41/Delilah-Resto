@@ -1,13 +1,28 @@
 const express = require("express");
 const app = express();
+
+//librería para encriptar y validar contraseñas
+
 const hashing = require("password-hash");
+
 const mysql = require("mysql2");
+
 const Sequelize = require("sequelize");
+
+//Para conectar con la base de datos
+
 const sequelize = new Sequelize("mysql://root:@localhost:3306/delilah");
+
 const jwt = require("jsonwebtoken");
+
+//Contraseña para firmar los tokens
+
 const passwordJwt = "MafcxI9nlw";
+
 app.use(express.json());
-//
+
+//Validar usuario y contraseña, guarda en el token si el usuario es admin o no
+
 function validarUsuario(req, res, next) {
   let nombreusuario = req.body.nombreusuario;
   let password = req.body.password;
@@ -41,7 +56,9 @@ function validarUsuario(req, res, next) {
       });
   }
 }
-//
+
+//Dado un token, se fija si corresponde a un admin o no
+
 function validarAdmin(req, res, next) {
   const token = req.headers.authorization;
   if (!token) {
@@ -56,7 +73,9 @@ function validarAdmin(req, res, next) {
     }
   }
 }
-//
+
+//Chequea que se haya iniciado sesión para poder interactuar
+
 function darAcceso(req, res, next) {
   const token = req.headers.authorization;
   if (!token) {
@@ -72,7 +91,9 @@ function darAcceso(req, res, next) {
     }
   }
 }
-//
+
+//Calcula el total de un pedido realizado
+
 async function calcularPrecioTotal(req, res, next) {
   let productos = req.body.productos;
   let cantidades = req.body.cantidades;
@@ -93,7 +114,9 @@ async function calcularPrecioTotal(req, res, next) {
   res.locals = total;
   return next();
 }
-//
+
+//Endpoint para crear usuario, acceso libre
+
 app.post("/usuarios", (req, res) => {
   nombreusuario = req.body.nombreusuario;
   password = req.body.password;
@@ -144,7 +167,9 @@ app.post("/usuarios", (req, res) => {
       });
   }
 });
-//
+
+//Trae todos los usuarios, sólo administrador
+
 app.get("/usuarios", validarAdmin, (req, res) => {
   sequelize
     .query("SELECT nombre_usuario, nombre, apellido, mail, telefono,admin FROM usuarios", { type: sequelize.QueryTypes.SELECT })
@@ -152,12 +177,16 @@ app.get("/usuarios", validarAdmin, (req, res) => {
       res.status(200).json(resultados);
     });
 });
-//
+
+//Endpoint para iniciar sesión, acceso libre
+
 app.post("/login", validarUsuario, (req, res) => {
   const token = req.locals;
   res.status(200).json({"token": token});
 });
-//
+
+//Endpoint para crear productos, sólo administrador
+
 app.post("/productos", validarAdmin, (req, res) => {
   nombre = req.body.nombre;
   precio = req.body.precio;
@@ -172,18 +201,25 @@ app.post("/productos", validarAdmin, (req, res) => {
         .json("Se ha agregado el nuevo producto a la base de datos");
     });
 });
-//
+
+//Endpoint para eliminar productos, sólo administrador
+
 app.delete("/productos/:id", validarAdmin, (req, res) => {
-  const producto_id = req.params.id;
-  sequelize
-    .query("DELETE FROM productos WHERE id = ?", {
-      replacements: [producto_id]
-    })
-    .then(resultados => {
+    const producto_id = req.params.id;
+    sequelize
+      .query("DELETE FROM productos WHERE id = ?", {
+        replacements: [producto_id]
+      })
+      .then(resultados => {
       res.status(200).json("Se ha eliminado el producto");
-    });
+      })
+      .catch((err) => {
+        res.status(500).json(err)
+      })
 });
-//
+
+//Endpoint para editar productos, sólo administrador
+
 app.patch("/productos/:id", validarAdmin, (req, res) => {
   let id_producto = req.params.id;
   let nuevo_nombre = req.body.nuevo_nombre;
@@ -214,7 +250,9 @@ app.patch("/productos/:id", validarAdmin, (req, res) => {
       });
   }
 });
-//
+
+//Endpoint para consultar todos los productos disponibles, sólo usuarios autenticados y admin
+
 app.get("/productos", darAcceso, (req, res) => {
   sequelize
     .query("SELECT * FROM productos", { type: sequelize.QueryTypes.SELECT })
@@ -222,7 +260,9 @@ app.get("/productos", darAcceso, (req, res) => {
       res.status(200).json(resultados);
     });
 });
-//
+
+//Endpoint para realizar un nuevo pedido, usuarios autenticados
+
 app.post("/pedidos", darAcceso, calcularPrecioTotal, (req, res) => {
   let usuario_id = req.locals.id_usuario;
   let direccion = req.body.direccion;
@@ -239,6 +279,7 @@ app.post("/pedidos", darAcceso, calcularPrecioTotal, (req, res) => {
       }
     )
     .then(resultados => {
+      //Este query es para saber el id que va a tener este nuevo pedido
       sequelize
         .query("SELECT id FROM pedidos ORDER BY id DESC LIMIT 1", {
           type: sequelize.QueryTypes.SELECT
@@ -259,7 +300,9 @@ app.post("/pedidos", darAcceso, calcularPrecioTotal, (req, res) => {
         });
     });
 });
-//
+
+//Trae todos los pedidos, sólo administrador
+
 app.get("/pedidos", validarAdmin, (req, res) => {
   sequelize
     .query(
@@ -270,7 +313,9 @@ app.get("/pedidos", validarAdmin, (req, res) => {
       res.status(200).json(resultados);
     });
 });
-//
+
+//Endpoint para actualizar el estado de un pedido, sólo administradores
+
 app.patch("/pedidos/:id", validarAdmin, (req, res) => {
   let id_pedido = req.params.id;
   let nuevo_estado = req.body.nuevo_estado;
@@ -281,6 +326,22 @@ app.patch("/pedidos/:id", validarAdmin, (req, res) => {
     .then(resultados => {
       res.status(200).json("El estado del pedido fue modificado");
     });
+});
+
+//Endpoint para eliminar pedidos, solo administrador
+
+app.delete("/pedidos/:id", validarAdmin, (req, res) => {
+  let id_pedido = req.params.id;
+  sequelize
+    .query("DELETE FROM pedidos WHERE id = ?", {
+      replacements: [id_pedido],
+    })
+    .then((resultados) => {
+      res.status(200).json("Pedido eliminado");
+    }).catch((err => {
+      res.status(500).send(err)
+    })
+    )
 });
 
 app.listen(3000, function() {

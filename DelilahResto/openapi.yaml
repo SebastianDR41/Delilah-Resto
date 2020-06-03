@@ -304,7 +304,34 @@ paths:
             schema:
               $ref: '#/components/schemas/ActualizarPedido'
         description: Nuevo estado del pedido
-    
+  delete:
+      tags:
+        - Administrador
+      summary: Elimina un pedido
+      description: Dado el id de un pedido, lo elimina de la base de datos.
+      parameters:
+        - name: id
+          in: path
+          description: ID del pedido a eliminar
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Token obtenido al realizar el login desde la cuenta de administrador.
+          required: true
+          schema:
+            type: string
+            example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      responses:
+        '200':
+          description: Se ha eliminado el pedido
+        '400':
+          description: Primero debes iniciar sesión
+        '403':
+          description: Acceso denegado. Sólo administradores
+
 components:
   schemas:
     Post-Usuario:
